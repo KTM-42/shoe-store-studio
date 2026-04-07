@@ -20,6 +20,7 @@ import AdminRevenue from "./pages/admin/AdminRevenue.tsx";
 import AdminBestsellers from "./pages/admin/AdminBestsellers.tsx";
 import AdminReviews from "./pages/admin/AdminReviews.tsx";
 import AdminBanners from "./pages/admin/AdminBanners.tsx";
+import AdminBrands from "./pages/admin/AdminBrands.tsx";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/products" element={<AdminProducts />} />
             <Route path="/admin/categories" element={<AdminCategories />} />
+            <Route path="/admin/brands" element={<AdminBrands />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/inventory" element={<AdminInventory />} />

@@ -1,14 +1,21 @@
 import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { mockReviews, Review } from "@/data/adminData";
-import { Star, CheckCircle, XCircle } from "lucide-react";
+import { Star, CheckCircle, XCircle, Search } from "lucide-react";
 import { toast } from "sonner";
 
 const AdminReviews = () => {
   const [reviews, setReviews] = useState<Review[]>(mockReviews);
   const [filter, setFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [ratingFilter, setRatingFilter] = useState<number | null>(null);
 
-  const filtered = filter ? reviews.filter((r) => r.status === filter) : reviews;
+  const filtered = reviews.filter((r) => {
+    const matchStatus = !filter || r.status === filter;
+    const matchSearch = !search || r.userName.toLowerCase().includes(search.toLowerCase()) || r.productName.toLowerCase().includes(search.toLowerCase()) || r.comment.toLowerCase().includes(search.toLowerCase());
+    const matchRating = ratingFilter === null || r.rating === ratingFilter;
+    return matchStatus && matchSearch && matchRating;
+  });
 
   const updateStatus = (id: string, status: Review["status"]) => {
     setReviews((prev) => prev.map((r) => r.id === id ? { ...r, status } : r));
@@ -19,6 +26,19 @@ const AdminReviews = () => {
     <AdminLayout>
       <h1 className="font-heading text-3xl font-bold mb-6">QUẢN LÝ ĐÁNH GIÁ</h1>
 
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input placeholder="Tìm theo tên, sản phẩm, nội dung..." value={search} onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-lg border border-border bg-card pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        </div>
+        <select value={ratingFilter ?? ""} onChange={(e) => setRatingFilter(e.target.value ? Number(e.target.value) : null)}
+          className="rounded-lg border border-border bg-card px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">Tất cả sao</option>
+          {[5, 4, 3, 2, 1].map((s) => <option key={s} value={s}>{s} sao</option>)}
+        </select>
+      </div>
+
       <div className="flex gap-2 mb-6">
         {[{ label: "Tất cả", value: "" }, { label: "Chờ duyệt", value: "pending" }, { label: "Đã duyệt", value: "approved" }, { label: "Từ chối", value: "rejected" }].map((opt) => (
           <button key={opt.value} onClick={() => setFilter(opt.value)}
@@ -27,6 +47,8 @@ const AdminReviews = () => {
           </button>
         ))}
       </div>
+
+      <p className="text-xs text-muted-foreground mb-4">{filtered.length} đánh giá</p>
 
       <div className="space-y-4">
         {filtered.map((review) => (
@@ -67,6 +89,7 @@ const AdminReviews = () => {
             </div>
           </div>
         ))}
+        {filtered.length === 0 && <p className="text-center text-muted-foreground py-8">Không tìm thấy đánh giá nào.</p>}
       </div>
     </AdminLayout>
   );
