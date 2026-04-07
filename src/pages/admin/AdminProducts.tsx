@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { products, formatPrice, Product } from "@/data/products";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, ImagePlus, X, Star } from "lucide-react";
 import { toast } from "sonner";
 
 const AdminProducts = () => {
@@ -10,6 +10,9 @@ const AdminProducts = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", brand: "", price: "", category: "", description: "" });
+  const [images, setImages] = useState<string[]>([]);
+  const [thumbIndex, setThumbIndex] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = items.filter(
     (p) => p.name.toLowerCase().includes(search.toLowerCase()) || p.brand.toLowerCase().includes(search.toLowerCase())
@@ -23,7 +26,45 @@ const AdminProducts = () => {
   const handleEdit = (product: Product) => {
     setEditingId(product.id);
     setForm({ name: product.name, brand: product.brand, price: product.price.toString(), category: product.category, description: product.description });
+    setImages(product.images);
+    setThumbIndex(0);
     setShowForm(true);
+  };
+
+  const handleAddNew = () => {
+    setShowForm(true);
+    setEditingId(null);
+    setForm({ name: "", brand: "", price: "", category: "", description: "" });
+    setImages([]);
+    setThumbIndex(0);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        if (ev.target?.result) {
+          setImages((prev) => [...prev, ev.target!.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = "";
+  };
+
+  const handleAddImageUrl = () => {
+    const url = prompt("Nhập URL ảnh:");
+    if (url) {
+      setImages((prev) => [...prev, url]);
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    if (thumbIndex === index) setThumbIndex(0);
+    else if (thumbIndex > index) setThumbIndex((prev) => prev - 1);
   };
 
   const handleSave = () => {
@@ -31,13 +72,20 @@ const AdminProducts = () => {
       toast.error("Vui lòng điền đầy đủ thông tin!");
       return;
     }
+    if (images.length === 0) {
+      toast.error("Vui lòng thêm ít nhất 1 ảnh!");
+      return;
+    }
+    // Reorder images so thumb is first
+    const orderedImages = [images[thumbIndex], ...images.filter((_, i) => i !== thumbIndex)];
+
     if (editingId) {
-      setItems((prev) => prev.map((p) => p.id === editingId ? { ...p, name: form.name, brand: form.brand, price: Number(form.price), category: form.category, description: form.description } : p));
+      setItems((prev) => prev.map((p) => p.id === editingId ? { ...p, name: form.name, brand: form.brand, price: Number(form.price), category: form.category, description: form.description, images: orderedImages } : p));
       toast.success("Đã cập nhật sản phẩm!");
     } else {
       const newProduct: Product = {
         id: Date.now().toString(), name: form.name, brand: form.brand, price: Number(form.price),
-        images: ["https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600"],
+        images: orderedImages,
         sizes: [39, 40, 41, 42, 43], category: form.category, description: form.description, rating: 0, reviews: 0,
       };
       setItems((prev) => [...prev, newProduct]);
@@ -46,13 +94,17 @@ const AdminProducts = () => {
     setShowForm(false);
     setEditingId(null);
     setForm({ name: "", brand: "", price: "", category: "", description: "" });
+    setImages([]);
+    setThumbIndex(0);
   };
+
+  const inputClass = "rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary";
 
   return (
     <AdminLayout>
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-heading text-3xl font-bold">QUẢN LÝ SẢN PHẨM</h1>
-        <button onClick={() => { setShowForm(true); setEditingId(null); setForm({ name: "", brand: "", price: "", category: "", description: "" }); }}
+        <button onClick={handleAddNew}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
           <Plus className="h-4 w-4" /> Thêm sản phẩm
         </button>
@@ -62,14 +114,10 @@ const AdminProducts = () => {
         <div className="rounded-xl border border-border bg-card p-6 mb-6 animate-slide-up">
           <h3 className="font-heading text-sm font-semibold mb-4">{editingId ? "SỬA SẢN PHẨM" : "THÊM SẢN PHẨM MỚI"}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <input placeholder="Tên sản phẩm" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-            <input placeholder="Thương hiệu" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })}
-              className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-            <input placeholder="Giá (VND)" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })}
-              className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-            <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+            <input placeholder="Tên sản phẩm" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} />
+            <input placeholder="Thương hiệu" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} className={inputClass} />
+            <input placeholder="Giá (VND)" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className={inputClass} />
+            <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputClass}>
               <option value="">Chọn danh mục</option>
               <option value="Running">Running</option>
               <option value="Basketball">Basketball</option>
@@ -78,7 +126,65 @@ const AdminProducts = () => {
             </select>
           </div>
           <textarea placeholder="Mô tả sản phẩm" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-primary" rows={3} />
+            className={`w-full ${inputClass} mb-4`} rows={3} />
+
+          {/* Image Management */}
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-foreground mb-2">Ảnh sản phẩm</label>
+            <div className="flex flex-wrap gap-3 mb-3">
+              {images.map((img, index) => (
+                <div key={index} className={`relative group rounded-lg overflow-hidden border-2 transition-all ${index === thumbIndex ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-muted-foreground"}`}>
+                  <img src={img} alt={`Ảnh ${index + 1}`} className="h-24 w-24 object-cover" />
+                  {/* Thumb badge */}
+                  {index === thumbIndex && (
+                    <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded">
+                      THUMB
+                    </div>
+                  )}
+                  {/* Overlay actions */}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                    <button
+                      onClick={() => setThumbIndex(index)}
+                      title="Đặt làm ảnh đại diện"
+                      className="p-1.5 rounded-full bg-background/90 text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                    >
+                      <Star className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleRemoveImage(index)}
+                      title="Xóa ảnh"
+                      className="p-1.5 rounded-full bg-background/90 text-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {/* Add image buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-24 w-24 rounded-lg border-2 border-dashed border-border hover:border-primary flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <ImagePlus className="h-5 w-5" />
+                  <span className="text-[10px] font-medium">Tải lên</span>
+                </button>
+                <button
+                  onClick={handleAddImageUrl}
+                  className="h-24 w-24 rounded-lg border-2 border-dashed border-border hover:border-primary flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span className="text-[10px] font-medium">URL</span>
+                </button>
+              </div>
+              <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Hover vào ảnh để chọn <Star className="inline h-3 w-3" /> làm ảnh đại diện (thumbnail) hoặc <X className="inline h-3 w-3" /> xóa. Ảnh đầu tiên được chọn mặc định.
+            </p>
+          </div>
+
           <div className="flex gap-3">
             <button onClick={handleSave} className="rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
               {editingId ? "Cập nhật" : "Thêm"}
@@ -102,6 +208,7 @@ const AdminProducts = () => {
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Sản phẩm</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase hidden md:table-cell">Thương hiệu</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Giá</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase hidden md:table-cell">Ảnh</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase hidden md:table-cell">Danh mục</th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase">Hành động</th>
             </tr>
@@ -117,6 +224,18 @@ const AdminProducts = () => {
                 </td>
                 <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{product.brand}</td>
                 <td className="px-4 py-3 font-medium text-primary">{formatPrice(product.price)}</td>
+                <td className="px-4 py-3 hidden md:table-cell">
+                  <div className="flex -space-x-2">
+                    {product.images.slice(0, 3).map((img, i) => (
+                      <img key={i} src={img} alt="" className="h-8 w-8 rounded-full object-cover border-2 border-card" />
+                    ))}
+                    {product.images.length > 3 && (
+                      <span className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-[10px] font-semibold text-muted-foreground border-2 border-card">
+                        +{product.images.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{product.category}</td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
