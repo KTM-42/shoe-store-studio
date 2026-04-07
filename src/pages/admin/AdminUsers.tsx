@@ -8,10 +8,13 @@ import { toast } from "sonner";
 const AdminUsers = () => {
   const [users, setUsers] = useState<AdminUser[]>(mockUsers);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
-  const filtered = users.filter(
-    (u) => u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = users.filter((u) => {
+    const matchSearch = !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()) || u.phone.includes(search);
+    const matchStatus = !statusFilter || u.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
 
   const toggleStatus = (id: string) => {
     setUsers((prev) => prev.map((u) => u.id === id ? { ...u, status: u.status === "active" ? "blocked" : "active" } : u));
@@ -22,11 +25,21 @@ const AdminUsers = () => {
     <AdminLayout>
       <h1 className="font-heading text-3xl font-bold mb-6">QUẢN LÝ NGƯỜI DÙNG</h1>
 
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <input placeholder="Tìm người dùng..." value={search} onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-lg border border-border bg-card pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input placeholder="Tìm theo tên, email, SĐT..." value={search} onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-lg border border-border bg-card pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        </div>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-lg border border-border bg-card px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">Tất cả trạng thái</option>
+          <option value="active">Hoạt động</option>
+          <option value="blocked">Đã chặn</option>
+        </select>
       </div>
+
+      <p className="text-xs text-muted-foreground mb-4">{filtered.length} người dùng</p>
 
       <div className="rounded-xl border border-border overflow-hidden">
         <table className="w-full text-sm">
@@ -64,6 +77,7 @@ const AdminUsers = () => {
                 </td>
               </tr>
             ))}
+            {filtered.length === 0 && <tr><td colSpan={6} className="text-center text-muted-foreground py-8">Không tìm thấy người dùng.</td></tr>}
           </tbody>
         </table>
       </div>

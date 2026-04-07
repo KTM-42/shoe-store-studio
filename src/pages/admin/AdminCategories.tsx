@@ -1,7 +1,7 @@
 import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { mockCategories, Category } from "@/data/adminData";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 
 const AdminCategories = () => {
@@ -9,6 +9,9 @@ const AdminCategories = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", slug: "" });
+  const [search, setSearch] = useState("");
+
+  const filtered = items.filter((c) => !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.slug.toLowerCase().includes(search.toLowerCase()));
 
   const handleSave = () => {
     if (!form.name) { toast.error("Vui lòng nhập tên danh mục!"); return; }
@@ -32,6 +35,12 @@ const AdminCategories = () => {
         </button>
       </div>
 
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input placeholder="Tìm danh mục..." value={search} onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-lg border border-border bg-card pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+
       {showForm && (
         <div className="rounded-xl border border-border bg-card p-6 mb-6 animate-slide-up">
           <h3 className="font-heading text-sm font-semibold mb-4">{editingId ? "SỬA DANH MỤC" : "THÊM DANH MỤC"}</h3>
@@ -48,8 +57,10 @@ const AdminCategories = () => {
         </div>
       )}
 
+      <p className="text-xs text-muted-foreground mb-4">{filtered.length} danh mục</p>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {items.map((cat) => (
+        {filtered.map((cat) => (
           <div key={cat.id} className="rounded-xl border border-border bg-card p-5 flex items-center justify-between">
             <div>
               <h3 className="font-heading font-semibold">{cat.name}</h3>
@@ -63,6 +74,7 @@ const AdminCategories = () => {
             </div>
           </div>
         ))}
+        {filtered.length === 0 && <p className="text-center text-muted-foreground py-8 col-span-full">Không tìm thấy danh mục.</p>}
       </div>
     </AdminLayout>
   );

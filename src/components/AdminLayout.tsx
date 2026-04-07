@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Package, FolderOpen, ShoppingCart, Users, Warehouse,
-  Ticket, BarChart3, TrendingUp, MessageSquare, Image, LogOut, ChevronLeft, Menu
+  Ticket, BarChart3, TrendingUp, MessageSquare, Image, LogOut, ChevronLeft, Menu, Tag
 } from "lucide-react";
 import { useState } from "react";
 
@@ -10,6 +10,7 @@ const navItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { title: "Sản phẩm", icon: Package, path: "/admin/products" },
   { title: "Danh mục", icon: FolderOpen, path: "/admin/categories" },
+  { title: "Thương hiệu", icon: Tag, path: "/admin/brands" },
   { title: "Đơn hàng", icon: ShoppingCart, path: "/admin/orders" },
   { title: "Người dùng", icon: Users, path: "/admin/users" },
   { title: "Kho hàng", icon: Warehouse, path: "/admin/inventory" },

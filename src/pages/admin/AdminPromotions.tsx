@@ -2,14 +2,22 @@ import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { mockPromotions, Promotion } from "@/data/adminData";
 import { formatPrice } from "@/data/products";
-import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Trash2, ToggleLeft, ToggleRight, Search } from "lucide-react";
 import { toast } from "sonner";
 
 const AdminPromotions = () => {
   const [promos, setPromos] = useState<Promotion[]>(mockPromotions);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [form, setForm] = useState({ code: "", description: "", discountType: "percent" as "percent" | "fixed", discountValue: "", minOrder: "", maxUses: "", startDate: "", endDate: "" });
+
+  const filtered = promos.filter((p) => {
+    const matchSearch = !search || p.code.toLowerCase().includes(search.toLowerCase()) || p.description.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = !statusFilter || (statusFilter === "active" ? p.isActive : !p.isActive);
+    return matchSearch && matchStatus;
+  });
 
   const toggleActive = (id: string) => {
     setPromos((prev) => prev.map((p) => p.id === id ? { ...p, isActive: !p.isActive } : p));
@@ -36,6 +44,20 @@ const AdminPromotions = () => {
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
           <Plus className="h-4 w-4" /> Thêm mã
         </button>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input placeholder="Tìm mã khuyến mãi..." value={search} onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-lg border border-border bg-card pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        </div>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-lg border border-border bg-card px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">Tất cả trạng thái</option>
+          <option value="active">Hoạt động</option>
+          <option value="inactive">Đã tắt</option>
+        </select>
       </div>
 
       {showForm && (
@@ -68,6 +90,8 @@ const AdminPromotions = () => {
         </div>
       )}
 
+      <p className="text-xs text-muted-foreground mb-4">{filtered.length} mã khuyến mãi</p>
+
       <div className="rounded-xl border border-border overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-card border-b border-border">
@@ -81,7 +105,7 @@ const AdminPromotions = () => {
             </tr>
           </thead>
           <tbody>
-            {promos.map((promo) => (
+            {filtered.map((promo) => (
               <tr key={promo.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
                 <td className="px-4 py-3 font-mono font-semibold text-primary">{promo.code}</td>
                 <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{promo.description}</td>
@@ -103,6 +127,7 @@ const AdminPromotions = () => {
                 </td>
               </tr>
             ))}
+            {filtered.length === 0 && <tr><td colSpan={6} className="text-center text-muted-foreground py-8">Không tìm thấy mã khuyến mãi.</td></tr>}
           </tbody>
         </table>
       </div>

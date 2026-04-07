@@ -1,6 +1,7 @@
 import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { products } from "@/data/products";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
 
 interface InventoryItem {
@@ -17,6 +18,19 @@ const initialInventory: InventoryItem[] = products.map((p) => ({
 
 const AdminInventory = () => {
   const [inventory, setInventory] = useState<InventoryItem[]>(initialInventory);
+  const [search, setSearch] = useState("");
+  const [brandFilter, setBrandFilter] = useState("");
+  const [stockFilter, setStockFilter] = useState("");
+
+  const brands = [...new Set(inventory.map((i) => i.brand))];
+
+  const filtered = inventory.filter((item) => {
+    const matchSearch = !search || item.name.toLowerCase().includes(search.toLowerCase());
+    const matchBrand = !brandFilter || item.brand === brandFilter;
+    const totalStock = item.sizes.reduce((sum, s) => sum + s.stock, 0);
+    const matchStock = !stockFilter || (stockFilter === "low" ? totalStock < 20 : totalStock >= 20);
+    return matchSearch && matchBrand && matchStock;
+  });
 
   const updateStock = (productId: string, size: number, stock: number) => {
     setInventory((prev) =>
@@ -32,8 +46,29 @@ const AdminInventory = () => {
     <AdminLayout>
       <h1 className="font-heading text-3xl font-bold mb-6">QUẢN LÝ KHO HÀNG</h1>
 
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input placeholder="Tìm sản phẩm..." value={search} onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-lg border border-border bg-card pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        </div>
+        <select value={brandFilter} onChange={(e) => setBrandFilter(e.target.value)}
+          className="rounded-lg border border-border bg-card px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">Tất cả thương hiệu</option>
+          {brands.map((b) => <option key={b} value={b}>{b}</option>)}
+        </select>
+        <select value={stockFilter} onChange={(e) => setStockFilter(e.target.value)}
+          className="rounded-lg border border-border bg-card px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">Tất cả tồn kho</option>
+          <option value="low">Sắp hết hàng (&lt;20)</option>
+          <option value="ok">Còn hàng (≥20)</option>
+        </select>
+      </div>
+
+      <p className="text-xs text-muted-foreground mb-4">{filtered.length} sản phẩm</p>
+
       <div className="space-y-4">
-        {inventory.map((item) => {
+        {filtered.map((item) => {
           const totalStock = item.sizes.reduce((sum, s) => sum + s.stock, 0);
           return (
             <div key={item.productId} className="rounded-xl border border-border bg-card p-5">
@@ -57,6 +92,7 @@ const AdminInventory = () => {
             </div>
           );
         })}
+        {filtered.length === 0 && <p className="text-center text-muted-foreground py-8">Không tìm thấy sản phẩm nào.</p>}
       </div>
     </AdminLayout>
   );
