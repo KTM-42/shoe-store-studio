@@ -36,7 +36,7 @@ const Header = () => {
           <Link to="/products" className="text-muted-foreground hover:text-foreground transition-colors">
             <Search className="h-5 w-5" />
           </Link>
-          <Link to="/profile" className="text-muted-foreground hover:text-foreground transition-colors">
+          <Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors">
             <User className="h-5 w-5" />
           </Link>
           <Link to="/cart" className="relative text-muted-foreground hover:text-foreground transition-colors">
